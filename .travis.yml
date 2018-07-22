@@ -1,33 +1,129 @@
-sudo: false
+# OSX/Linux (https://github.com/travis-ci-tester/toolchain-table)
 
-language: c
+language:
+  - cpp
 
-os:
- - linux
+# Container-based infrastructure (Linux)
+# * https://docs.travis-ci.com/user/migrating-from-legacy/#How-can-I-use-container-based-infrastructure%3F
+sudo:
+  - false
 
-compiler:
- - clang
- - gcc
- - g++
-
-install:
- - ./autogen.sh
- - env CC=tcc CFLAGS='-w' ./configure --prefix=/tmp --disable-dependency-tracking --disable-shared || cat config.log
- - make -j $(nproc) && make check && make install
- - env CC=tcc CPPFLAGS='-I/tmp/include' LDFLAGS='-L/tmp/lib' LD_LIBRARY_PATH='/tmp/lib' ./test/constcheck.sh
- - make uninstall
- - make distclean
-
-script:
- - ./configure --disable-dependency-tracking
- - if [ "$TRAVIS_OS_NAME" = 'linux' -a "$CC" = 'gcc' ]; then make -j $(nproc) CFLAGS='-g0' > /dev/null && cp src/libsodium/.libs/libsodium.so lib.so && make clean > /dev/null && make CFLAGS='-g0' CPPFLAGS='-DSODIUM_C99\(X\)=' > /dev/null && cp src/libsodium/.libs/libsodium.so lib-oldc.so && cmp lib.so lib-oldc.so && echo No binary changes && make clean > /dev/null ; fi
- - make distcheck
- - make distclean > /dev/null
- - ./configure --disable-dependency-tracking --enable-minimal
- - make check
- - ( echo '#include <sodium.h>' ; echo 'int main(void) { return sodium_init(); }' ) > /tmp/main.c && gcc -Isrc/libsodium/include -Isrc/libsodium/include/sodium $(find src -name '*.c' -o -name '*.S') /tmp/main.c
-
+# Install packages differs for container-based infrastructure
+# * https://docs.travis-ci.com/user/migrating-from-legacy/#How-do-I-install-APT-sources-and-packages%3F
+# List of available packages:
+# * https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-trusty
+# List of available sources:
+# * https://github.com/travis-ci/apt-source-whitelist/blob/master/ubuntu.json
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
-      - tcc
+      - python3-pip
+      - g++-7
+
+dist:
+  - trusty
+
+matrix:
+  include:
+    # Linux {
+
+    - os: linux
+      env: >
+        TOOLCHAIN=clang-cxx17
+        TEST=--test
+        BUILD_TESTS=ON
+
+    - os: linux
+      env: >
+        TOOLCHAIN=gcc-7-cxx17
+        TEST=--test
+        BUILD_TESTS=ON
+
+    - os: linux
+      env: >
+        TOOLCHAIN=android-ndk-r17-api-24-arm64-v8a-clang-libcxx14
+        TEST=""
+        BUILD_TESTS=ON
+
+    - os: linux
+      env: >
+        TOOLCHAIN=analyze-cxx17
+        TEST=""
+        BUILD_TESTS=ON
+
+    # }
+
+    # OSX {
+
+    - os: osx
+      osx_image: xcode9.3
+      env: >
+        TOOLCHAIN=osx-10-13-make-cxx14
+        TEST=--test
+        BUILD_TESTS=ON
+
+    - os: osx
+      osx_image: xcode9.3
+      env: >
+        TOOLCHAIN=osx-10-13-cxx14
+        TEST=--test
+        BUILD_TESTS=ON
+
+    - os: osx
+      osx_image: xcode9.3
+      env: >
+        TOOLCHAIN=ios-nocodesign-11-3-dep-9-3
+        TEST=""
+        BUILD_TESTS=OFF
+
+    # }
+
+install:
+  # Info about OS
+  - uname -a
+
+  # Info about available disk space
+  - df -h $HOME
+
+  # Disable autoupdate
+  # * https://github.com/Homebrew/brew/blob/7d31a70373edae4d8e78d91a4cbc05324bebc3ba/Library/Homebrew/manpages/brew.1.md.erb#L202
+  - export HOMEBREW_NO_AUTO_UPDATE=1
+
+  # Install Python 3
+  - if [[ "`uname`" == "Darwin" ]]; then travis_retry brew upgrade python; fi
+  - if [[ "`uname`" == "Darwin" ]]; then travis_retry brew install python3; fi
+
+  # Install Python package 'requests'
+  # 'easy_install3' is not installed by 'brew install python3' on OS X 10.9 Maverick
+  - if [[ "`uname`" == "Darwin" ]]; then pip3 install requests; fi
+  - if [[ "`uname`" == "Linux" ]]; then travis_retry pip3 install --user requests; fi
+
+  # Install latest Polly toolchains and scripts
+  - wget https://github.com/ruslo/polly/archive/master.zip
+  - unzip master.zip
+  - POLLY_ROOT="`pwd`/polly-master"
+  - export PATH="${POLLY_ROOT}/bin:${PATH}"
+
+  # Install dependencies (CMake, Android NDK)
+  - install-ci-dependencies.py --prune-archives
+
+  # Tune locations
+  - export PATH="`pwd`/_ci/cmake/bin:${PATH}"
+
+  # Installed if toolchain is Android (otherwise directory doesn't exist)
+  - export ANDROID_NDK_r10e="`pwd`/_ci/android-ndk-r10e"
+  - export ANDROID_NDK_r11c="`pwd`/_ci/android-ndk-r11c"
+  - export ANDROID_NDK_r15c="`pwd`/_ci/android-ndk-r15c"
+  - export ANDROID_NDK_r16b="`pwd`/_ci/android-ndk-r16b"
+  - export ANDROID_NDK_r17="`pwd`/_ci/android-ndk-r17"
+
+script:
+  - polly.py --toolchain ${TOOLCHAIN} --config Debug ${TEST} --verbose --install --ios-multiarch --ios-combined --fwd LIBSODIUM_ENABLE_TESTS=${BUILD_TESTS}
+
+# https://docs.travis-ci.com/user/customizing-the-build/#Whitelisting-or-blacklisting-branches
+# Exclude branch 'pkg.template'. Nothing to build there.
+branches:
+  except:
+    - /^pr\..*/
