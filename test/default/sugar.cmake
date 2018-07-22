@@ -1,0 +1,87 @@
+if(NOT EMSCRIPTEN AND NOT LIBSODIUM_NATIVE)
+  sugar_files(
+      LIBSODIUM_TESTS_SOURCES
+      sodium_utils2.c
+      sodium_utils3.c
+  )
+endif()
+
+sugar_files(
+    LIBSODIUM_TESTS_SOURCES
+    aead_aes256gcm.c
+    aead_chacha20poly1305.c
+    aead_xchacha20poly1305.c
+    auth.c
+    auth2.c
+    auth3.c
+    auth5.c
+    auth6.c 
+    auth7.c 
+    box.c
+    box2.c
+    box7.c
+    box8.c
+    box_easy.c
+    box_easy2.c
+    box_seal.c
+    box_seed.c
+    chacha20.c
+    codecs.c
+    core1.c
+    core2.c
+    core3.c
+    core4.c
+    core5.c
+    core6.c
+    ed25519_convert.c
+    generichash.c
+    generichash2.c
+    generichash3.c
+    hash.c
+    hash3.c
+    kdf.c
+    keygen.c
+    kx.c
+    metamorphic.c
+    misuse.c
+    onetimeauth.c
+    onetimeauth2.c
+    onetimeauth7.c
+    pwhash_argon2i.c
+    pwhash_argon2id.c
+    randombytes.c
+    scalarmult.c
+    scalarmult2.c
+    scalarmult5.c
+    scalarmult6.c
+    scalarmult7.c
+    secretbox.c
+    secretbox2.c
+    secretbox7.c
+    secretbox8.c
+    secretbox_easy.c
+    secretbox_easy2.c
+    secretstream.c
+    shorthash.c
+    sign.c
+    sodium_core.c
+    sodium_utils.c
+    sodium_version.c
+    stream.c
+    stream2.c
+    stream3.c
+    stream4.c
+    verify1.c
+)
+
+if(NOT LIBSODIUM_ENABLE_MINIMAL_BUILD)
+  sugar_files(
+      LIBSODIUM_TESTS_SOURCES
+      core_ed25519.c
+      pwhash_scrypt.c
+      pwhash_scrypt_ll.c
+      xchacha20.c
+      siphashx24.c
+      scalarmult_ed25519.c
+  )
+endif()
