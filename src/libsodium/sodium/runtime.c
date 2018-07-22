@@ -4,6 +4,10 @@
 # include <cpu-features.h>
 #endif
 
+#if defined(HAVE__XGETBV)
+# include <intrin.h>
+#endif
+
 #include "private/common.h"
 #include "runtime.h"
 
