@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.2) # minimal for Hunter
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.23.0.tar.gz"
-    SHA1 "4c27150185a31de4f65cfbb787c9561473c5b435"
+    URL "https://github.com/cpp-pm/hunter/archive/v0.24.16.tar.gz"
+    SHA1 "09668c254f01afeca1b3d3d2e4692ed5e0e39dcc"
 )
 
 project(libsodium VERSION 1.0.16)
