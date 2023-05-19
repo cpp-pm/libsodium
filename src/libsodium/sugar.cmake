@@ -155,11 +155,6 @@ if(NOT LIBSODIUM_ENABLE_MINIMAL_BUILD)
   )
 endif()
 
-sugar_files(
-    LIBSODIUM_SOURCES
-    randombytes/salsa20/randombytes_salsa20_random.c
-)
-
 if(NOT EMSCRIPTEN)
   if(LIBSODIUM_NATIVE)
     sugar_files(
